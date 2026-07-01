@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 
-
 namespace Datagram_sockets
 {
     public partial class Form1 : Form
@@ -15,58 +14,58 @@ namespace Datagram_sockets
         [Serializable]
         public class Message
         {
-            public string mes; // текст сообщения
-            public string user; // имя пользователя
+            public string mes; // текст повідомлення
+            public string user; // ім'я користувача
             public Message()
             {
 
             }
         }
-        public SynchronizationContext uiContext;
+        public System.Threading.SynchronizationContext uiContext;
 
         public Form1()
         {
             InitializeComponent();
-            // Получим контекст синхронизации для текущего потока 
+            // Отримаємо контекст синхронізації для поточного потоку
             uiContext = SynchronizationContext.Current;
             WaitClientQuery();
         }
 
-        // прием сообщения
+        // прийом повідомлення
         private async void WaitClientQuery()
         {
             await Task.Run(() =>
             {
                 try
                 {
-                    // установим для сокета адрес локальной конечной точки
-                    IPEndPoint ipEndPoint = new IPEndPoint(IPAddress.Any /* Предоставляет IP-адрес, указывающий, что сервер должен контролировать действия клиентов на всех сетевых интерфейсах.*/,
+                    // встановимо для сокета адресу локальної кінцевої точки
+                    IPEndPoint ipEndPoint = new IPEndPoint(IPAddress.Any /* Надає IP-адресу, яка вказує, що сервер повинен контролювати дії клієнтів на всіх мережевих інтерфейсах.*/,
                         49152 /* порт */);
 
-                    // создаем дейтаграммный сокет
-                    Socket socket = new Socket(AddressFamily.InterNetwork /*схема адресации*/, SocketType.Dgram /*тип сокета*/, ProtocolType.Udp /*протокол*/ );
-                    /* Значение InterNetwork указывает на то, что при подключении объекта Socket к конечной точке предполагается использование IPv4-адреса.
-                       Поддерживает датаграммы — ненадежные сообщения с фиксированной (обычно малой) максимальной длиной, передаваемые без установления подключения. 
-                     * Возможны потеря и дублирование сообщений, а также их получение не в том порядке, в котором они отправлены. 
-                     * Объект Socket типа Dgram не требует установки подключения до приема и передачи данных и может обеспечивать связь со множеством одноранговых узлов.
-                     * Dgram использует протокол Datagram (Udp) и InterNetwork.
+                    // створюємо дейтаграмний сокет
+                    Socket socket = new Socket(AddressFamily.InterNetwork /*схема адресації*/, SocketType.Dgram /*тип сокета*/, ProtocolType.Udp /*протокол*/ );
+                    /* Значення InterNetwork вказує на те, що при підключенні об'єкта Socket до кінцевої точки передбачається використання IPv4-адреси.
+                       Підтримує дейтаграми — ненадійні повідомлення з фіксованою (зазвичай малою) максимальною довжиною, що передаються без встановлення підключення. 
+                     * Можливі втрата та дублювання повідомлень, а також їх отримання не в тому порядку, в якому вони були відправлені. 
+                     * Об'єкт Socket типу Dgram не вимагає встановлення підключення перед прийомом та передачею даних і може забезпечувати зв'язок із багатьма одноранговими вузлами.
+                     * Dgram використовує протокол Datagram (Udp) та InterNetwork.
                      */
 
-                    socket.Bind(ipEndPoint); // Свяжем объект Socket с локальной конечной точкой.
+                    socket.Bind(ipEndPoint); // Зв'яжемо об'єкт Socket із локальною кінцевою точкою.
                     while (true)
                     {
-                        EndPoint remote = new IPEndPoint(0x7F000000, 100); // информация об удаленном хосте, который отправил датаграмму
+                        EndPoint remote = new IPEndPoint(0x7F000000, 100); // інформація про віддалений хост, який відправив дейтаграму
                         byte[] arr = new byte[1024];
-                        int len = socket.ReceiveFrom(arr, ref remote); // получим UDP-датаграмму
-                        string clientIP = ((IPEndPoint)remote).Address.ToString(); // получим IP-адрес удаленного 
+                        int len = socket.ReceiveFrom(arr, ref remote); // отримаємо UDP-дейтаграму
+                        string clientIP = ((IPEndPoint)remote).Address.ToString(); // отримаємо IP-адресу віддаленого вузла
                         byte[] copy = new byte[len];
                         Array.Copy(arr, 0, copy, 0, len);
-                        // Создадим поток, резервным хранилищем которого является память.
+                        // Створимо потік, резервним сховищем якого є пам'ять.
                         MemoryStream stream = new MemoryStream(copy);
-                        // XmlSerializer сериализует и десериализует объект в XML-формате 
+                        // XmlSerializer серіалізує та десеріалізує об'єкт у XML-форматі
                         XmlSerializer serializer = new XmlSerializer(typeof(Message));
-                        Message m = serializer.Deserialize(stream) as Message; // выполняем десериализацию
-                        // полученную от удаленного узла информацию добавляем в список
+                        Message m = serializer.Deserialize(stream) as Message; // виконуємо десеріалізацію
+                        // отриману від віддаленого вузла інформацію додаємо до списку
                         uiContext.Send(d => listBox1.Items.Add(clientIP), null);
                         uiContext.Send(d => listBox1.Items.Add(m.user), null);
                         uiContext.Send(d => listBox1.Items.Add(m.mes), null);
@@ -75,12 +74,12 @@ namespace Datagram_sockets
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Получатель: " + ex.Message);
+                    MessageBox.Show("Отримувач: " + ex.Message);
                 }
             });
         }
 
-        // отправление сообщения
+        // відправлення повідомлення
         private async void button1_Click(object sender, EventArgs e)
         {
             await Task.Run(() =>
@@ -88,34 +87,34 @@ namespace Datagram_sockets
                 try
                 {
                     IPEndPoint ipEndPoint = new IPEndPoint(
-                        IPAddress.Parse(ip_address.Text) /* IP-адрес удаленного DNS-узла, к которому планируется подключение. */, 
+                        IPAddress.Parse(ip_address.Text) /* IP-адреса віддаленого DNS-вузла, до якого планується підключення. */,
                         49152 /* порт */);
 
-                    // создаем дейтаграммный сокет
-                    Socket socket = new Socket(AddressFamily.InterNetwork /*схема адресации*/, SocketType.Dgram /*тип сокета*/, ProtocolType.Udp /*протокол*/ );
-                    /* Значение InterNetwork указывает на то, что при подключении объекта Socket к конечной точке предполагается использование IPv4-адреса.
-                       Поддерживает датаграммы — ненадежные сообщения с фиксированной (обычно малой) максимальной длиной, передаваемые без установления подключения. 
-                     * Возможны потеря и дублирование сообщений, а также их получение не в том порядке, в котором они отправлены. 
-                     * Объект Socket типа Dgram не требует установки подключения до приема и передачи данных и может обеспечивать связь со множеством одноранговых узлов.
-                     * Dgram использует протокол Datagram (Udp) и InterNetwork.
+                    // створюємо дейтаграмний сокет
+                    Socket socket = new Socket(AddressFamily.InterNetwork /*схема адресації*/, SocketType.Dgram /*тип сокета*/, ProtocolType.Udp /*протокол*/ );
+                    /* Значення InterNetwork вказує на те, що при підключенні об'єкта Socket до кінцевої точки передбачається використання IPv4-адреси.
+                       Підтримує дейтаграми — ненадійні повідомлення з фіксованою (зазвичай малою) максимальною довжиною, що передаються без встановлення підключення. 
+                     * Можливі втрата та дублювання повідомлень, а також їх отримання не в тому порядку, в якому вони були відправлені. 
+                     * Об'єкт Socket типу Dgram не вимагає встановлення підключення перед прийомом та передачею даних і може забезпечувати зв'язок із багатьма одноранговими вузлами.
+                     * Dgram використовує протокол Datagram (Udp) та InterNetwork.
                      */
-                    // Создадим поток, резервным хранилищем которого является память.
+                    // Створимо потік, резервним сховищем якого є пам'ять.
                     MemoryStream stream = new MemoryStream();
-                    // XmlSerializer сериализует и десериализует объект в XML-формате 
+                    // XmlSerializer серіалізує та десеріалізує об'єкт у XML-форматі
                     XmlSerializer serializer = new XmlSerializer(typeof(Message));
                     Message m = new Message();
-                    m.mes = textBox2.Text; // текст сообщения
-                    m.user = Environment.UserDomainName + @"\" + Environment.UserName; // имя пользователя
-                    serializer.Serialize(stream, m); // выполняем сериализацию
-                    byte[] arr = stream.ToArray(); // записываем содержимое потока в байтовый массив
+                    m.mes = textBox2.Text; // текст повідомлення
+                    m.user = Environment.UserDomainName + @"\" + Environment.UserName; // ім'я користувача
+                    serializer.Serialize(stream, m); // виконуємо серіалізацію
+                    byte[] arr = stream.ToArray(); // записуємо вміст потоку в байтовий масив
                     stream.Close();
-                    socket.SendTo(arr, ipEndPoint); // передаем UDP-датаграмму на удаленный узел
-                    socket.Shutdown(SocketShutdown.Send); // Отключаем объект Socket от передачи.
-                    socket.Close(); // закрываем UDP-подключение и освобождаем все ресурсы
+                    socket.SendTo(arr, ipEndPoint); // передаємо UDP-дейтаграму на віддалений вузол
+                    socket.Shutdown(SocketShutdown.Send); // Відключаємо об'єкт Socket від передачі.
+                    socket.Close(); // закриваємо UDP-підключення та звільняємо всі ресурси
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Отправитель: " + ex.Message);
+                    MessageBox.Show("Відправник: " + ex.Message);
                 }
             });
         }
